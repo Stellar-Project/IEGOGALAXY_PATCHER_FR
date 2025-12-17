@@ -19,7 +19,7 @@ namespace IEGOGALAXY_PATCHER_FR
         private const string URL_PATCH_BIGBANG = "https://iegogalaxy.fr/downloads/patch/latest/patch_bigbang_fr.zip";
         private const string URL_PATCH_SUPERNOVA = "https://iegogalaxy.fr/downloads/patch/latest/patch_supernova_fr.zip";
 
-        private const string URL_XML_UPDATE = "https://raw.githubusercontent.com/TON_PSEUDO/TON_REPO/main/update.xml";
+        private const string URL_XML_UPDATE = "https://raw.githubusercontent.com/Stellar-Project/IEGOGALAXY_PATCHER_FR/refs/heads/master/update.xml?token=GHSAT0AAAAAADK3CYVDJL55VYT5EU4X6ZEE2KDEJQQ";
 
         private readonly PatchManager _patchManager;
 
