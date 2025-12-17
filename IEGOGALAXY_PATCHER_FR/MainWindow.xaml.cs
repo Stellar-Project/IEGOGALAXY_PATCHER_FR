@@ -45,7 +45,15 @@ namespace IEGOGALAXY_PATCHER_FR
         private void DisplayVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            this.Title = $"IEGO GALAXY - PATCH FR | v{version.Major}.{version.Minor}.{version.Build}";
+
+            if (version != null)
+            {
+                this.Title = $"IEGO GALAXY - PATCH FR | v{version.Major}.{version.Minor}.{version.Build}";
+            }
+            else
+            {
+                this.Title = "IEGO GALAXY - PATCH FR";
+            }
         }
 
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
