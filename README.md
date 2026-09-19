@@ -10,18 +10,19 @@ L'application détecte automatiquement le chemin d'installation approprié selon
 
 ## Fonctionnalités
 
-- Sélection de la version du jeu (Bigbang ou Supernova)
+- Sélection de la version du jeu (Bigbang ou Supernova) avec auto-détection intelligente au démarrage
 - Détection automatique du dossier d'installation pour Citra, Azahar ou une carte SD 3DS
 - Sélection manuelle du dossier de destination
 - Détection de la version du patch déjà installée, avec indication d'une mise à jour disponible
 - Téléchargement du patch avec suivi de progression détaillé (taille téléchargée, vitesse implicite via mises à jour régulières)
 - Vérification d'intégrité du fichier téléchargé (checksum SHA256)
-- Sauvegarde automatique de l'installation existante avant chaque nouveau patch
-- Restauration en un clic de la sauvegarde précédente
+- Sauvegarde automatique de l'installation existante avec rétention configurable (1, 3, 5 versions ou désactivé) et dossier de sauvegarde personnalisé
+- Restauration de la sauvegarde précédente en un clic
 - Annulation possible en cours de téléchargement
-- Nouvelle tentative automatique en cas d'échec réseau, avec délai d'expiration configuré
-- Journal d'application détaillé pour le support et le diagnostic
-- Mise à jour automatique de l'application elle-même
+- Nouvelle tentative automatique en cas d'échec réseau, avec délai d'expiration (timeout) réglable (30s à 300s)
+- Panneau de paramètres persistant (thèmes Système/Sombre/Clair, activation des màj au démarrage)
+- Journal d'application détaillé avec accès rapide en un clic depuis les paramètres
+- Mise à jour automatique de l'application elle-même (désactivable)
 
 ## Prérequis
 
@@ -98,7 +99,8 @@ Chaque tag suivant le format `vX.Y.Z` poussé sur le dépôt déclenche automati
 Le code est organisé autour de deux gestionnaires principaux :
 
 - `PatchManager` : téléchargement (avec retry et timeout), vérification d'intégrité, extraction, sauvegarde/restauration et installation du patch
-- `PathManager` : détection des chemins d'installation selon la plateforme et vérification sommaire de la présence du jeu
+- `PathManager` : détection des chemins d'installation selon la plateforme et vérification de la présence du jeu avec auto-détection au démarrage
+- `SettingsManager` : persistance des préférences utilisateur (thème, màj au démarrage, timeout, sauvegardes) en JSON dans `%AppData%/IEGOGALAXY_PATCHER_FR/settings.json`
 - `LogManager` : journalisation des opérations dans `%AppData%/IEGOGALAXY_PATCHER_FR/log.txt`
 
 ### Gestion des erreurs
