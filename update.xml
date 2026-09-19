@@ -1,6 +1,7 @@
 <item>
-    <version>1.0.0</version>
-    <url>https://github.com/Stellar-Project/IEGOGALAXY_PATCHER_FR/releases/download/v1.0.0/Setup.zip</url>
-    <changelog>https://github.com/Stellar-Project/IEGOGALAXY_PATCHER_FR/releases/tag/v1.0.0</changelog>
+    <version>1.1.0</version>
+    <url>https://github.com/Stellar-Project/IEGOGALAXY_PATCHER_FR/releases/download/v1.1.0/IEGOGALAXY_PATCHER_FR.exe</url>
+    <changelog>https://github.com/Stellar-Project/IEGOGALAXY_PATCHER_FR/releases/tag/v1.1.0</changelog>
     <mandatory>false</mandatory>
+    <checksum algorithm="SHA256">EF1BAF61E3492DB0361B7AF41120359D127D51E8BBDA201E3EB2FB56C9D73377</checksum>
 </item>
