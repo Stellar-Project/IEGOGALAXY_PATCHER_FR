@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -28,18 +29,74 @@ namespace IEGOGALAXY_PATCHER_FR
 
         private readonly PatchManager _patchManager;
         private CancellationTokenSource? _cts;
+        private bool _isInitialized;
 
         public MainWindow()
         {
+            SettingsManager.Load();
             InitializeComponent();
             _patchManager = new PatchManager();
 
-            ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.SyncWithAppMode;
-            ThemeManager.Current.SyncTheme();
+            LoadSettingsIntoUI();
 
-            InitializeAutoUpdater();
             DisplayVersion();
             UpdatePath_Event(null, null);
+
+            if (SettingsManager.Current.AutoCheckUpdate)
+            {
+                InitializeAutoUpdater();
+            }
+
+            _isInitialized = true;
+        }
+
+        private void LoadSettingsIntoUI()
+        {
+            ComboTheme.SelectedIndex = SettingsManager.Current.ThemeIndex;
+            ApplyTheme(SettingsManager.Current.ThemeIndex);
+
+            ChkAutoCheckUpdate.IsChecked = SettingsManager.Current.AutoCheckUpdate;
+
+            _patchManager.TimeoutSeconds = SettingsManager.Current.DownloadTimeoutSeconds;
+            foreach (ComboBoxItem item in ComboTimeout.Items)
+            {
+                if (item.Tag?.ToString() == SettingsManager.Current.DownloadTimeoutSeconds.ToString())
+                {
+                    ComboTimeout.SelectedItem = item;
+                    break;
+                }
+            }
+
+            TxtBackupPath.Text = SettingsManager.Current.CustomBackupPath ?? "";
+            foreach (ComboBoxItem item in ComboBackupCount.Items)
+            {
+                if (item.Tag?.ToString() == SettingsManager.Current.BackupRetentionCount.ToString())
+                {
+                    ComboBackupCount.SelectedItem = item;
+                    break;
+                }
+            }
+        }
+
+        private void ApplyTheme(int themeIndex)
+        {
+            var app = Application.Current;
+
+            switch (themeIndex)
+            {
+                case 0:
+                    ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.SyncWithAppMode;
+                    ThemeManager.Current.SyncTheme();
+                    break;
+                case 1:
+                    ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.DoNotSync;
+                    ThemeManager.Current.ChangeTheme(app, "Dark.Blue");
+                    break;
+                case 2:
+                    ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.DoNotSync;
+                    ThemeManager.Current.ChangeTheme(app, "Light.Blue");
+                    break;
+            }
         }
 
         private void InitializeAutoUpdater()
@@ -77,22 +134,43 @@ namespace IEGOGALAXY_PATCHER_FR
 
         private void ComboTheme_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var app = Application.Current;
+            if (!_isInitialized) return;
 
-            switch (ComboTheme.SelectedIndex)
+            ApplyTheme(ComboTheme.SelectedIndex);
+            SettingsManager.Current.ThemeIndex = ComboTheme.SelectedIndex;
+            SettingsManager.Save();
+        }
+
+        private void ChkAutoCheckUpdate_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!_isInitialized) return;
+
+            SettingsManager.Current.AutoCheckUpdate = ChkAutoCheckUpdate.IsChecked == true;
+            SettingsManager.Save();
+        }
+
+        private void ComboTimeout_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_isInitialized) return;
+
+            if (ComboTimeout.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out int seconds))
             {
-                case 0:
-                    ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.SyncWithAppMode;
-                    ThemeManager.Current.SyncTheme();
-                    break;
-                case 1:
-                    ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.DoNotSync;
-                    ThemeManager.Current.ChangeTheme(app, "Dark.Blue");
-                    break;
-                case 2:
-                    ThemeManager.Current.ThemeSyncMode = ThemeSyncMode.DoNotSync;
-                    ThemeManager.Current.ChangeTheme(app, "Light.Blue");
-                    break;
+                SettingsManager.Current.DownloadTimeoutSeconds = seconds;
+                _patchManager.TimeoutSeconds = seconds;
+                SettingsManager.Save();
+            }
+        }
+
+        private void BtnOpenLogFolder_Click(object sender, RoutedEventArgs e)
+        {
+            string logDir = Path.GetDirectoryName(LogManager.GetLogFilePath())!;
+            if (Directory.Exists(logDir))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = logDir,
+                    UseShellExecute = true
+                });
             }
         }
 
@@ -275,14 +353,26 @@ namespace IEGOGALAXY_PATCHER_FR
         {
             if (string.IsNullOrWhiteSpace(TxtPath.Text)) return;
 
+            var backups = _patchManager.GetAvailableBackups(TxtPath.Text, SettingsManager.Current.CustomBackupPath);
+            if (backups.Count == 0)
+            {
+                await this.ShowMessageAsync("Information", "Aucune sauvegarde disponible pour cet emplacement.");
+                return;
+            }
+
+            string chosenBackup = backups[0];
+            string message = backups.Count > 1
+                ? $"Plusieurs sauvegardes existent ({backups.Count}).\n\nLa plus récente sera restaurée :\n• {Path.GetFileName(chosenBackup)}\n\nVoulez-vous restaurer cette sauvegarde ?"
+                : $"Restaurer la sauvegarde ({Path.GetFileName(chosenBackup)}) ? Le patch actuellement installé sera remplacé.";
+
             var confirmResult = await this.ShowMessageAsync(
                 "Confirmation",
-                "Restaurer la sauvegarde précédente ? Le patch actuellement installé sera remplacé.",
+                message,
                 MessageDialogStyle.AffirmativeAndNegative);
 
             if (confirmResult != MessageDialogResult.Affirmative) return;
 
-            bool success = _patchManager.RestoreBackup(TxtPath.Text);
+            bool success = _patchManager.RestoreBackup(TxtPath.Text, chosenBackup, SettingsManager.Current.CustomBackupPath);
 
             if (success)
             {
@@ -291,8 +381,37 @@ namespace IEGOGALAXY_PATCHER_FR
             }
             else
             {
-                await this.ShowMessageAsync("Erreur", "Aucune sauvegarde disponible pour cet emplacement.");
+                await this.ShowMessageAsync("Erreur", "La restauration a échoué. Consultez les journaux.");
             }
+        }
+
+        private void ComboBackupCount_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_isInitialized) return;
+
+            if (ComboBackupCount.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out int count))
+            {
+                SettingsManager.Current.BackupRetentionCount = count;
+                SettingsManager.Save();
+            }
+        }
+
+        private void BtnBrowseBackupPath_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new VistaFolderBrowserDialog();
+            if (dialog.ShowDialog() == true)
+            {
+                TxtBackupPath.Text = dialog.SelectedPath;
+                SettingsManager.Current.CustomBackupPath = dialog.SelectedPath;
+                SettingsManager.Save();
+            }
+        }
+
+        private void BtnClearBackupPath_Click(object sender, RoutedEventArgs e)
+        {
+            TxtBackupPath.Text = "";
+            SettingsManager.Current.CustomBackupPath = null;
+            SettingsManager.Save();
         }
     }
 }

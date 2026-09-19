@@ -30,22 +30,82 @@
     <mah:MetroWindow.Flyouts>
         <mah:FlyoutsControl>
             <mah:Flyout x:Name="FlyoutSettings" Header="Paramètres" Position="Right" Width="300" Theme="Adapt">
-                <StackPanel Margin="20">
-                    <TextBlock Text="Apparence" 
-                               FontSize="18" 
-                               FontWeight="Bold" 
-                               Foreground="{DynamicResource MahApps.Brushes.Accent}"
-                               Margin="0,0,0,10"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Apparence" 
+                                   FontSize="18" 
+                                   FontWeight="Bold" 
+                                   Foreground="{DynamicResource MahApps.Brushes.Accent}"
+                                   Margin="0,0,0,10"/>
 
-                    <TextBlock Text="Thème de l'application :" Margin="0,0,0,5"/>
-                    <ComboBox x:Name="ComboTheme" SelectionChanged="ComboTheme_SelectionChanged" SelectedIndex="0">
-                        <ComboBoxItem Content="Par rapport au système"/>
-                        <ComboBoxItem Content="Mode Sombre (Dark)"/>
-                        <ComboBoxItem Content="Mode Clair (Light)"/>
-                    </ComboBox>
+                        <TextBlock Text="Thème de l'application :" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="ComboTheme" SelectionChanged="ComboTheme_SelectionChanged" SelectedIndex="0">
+                            <ComboBoxItem Content="Par rapport au système"/>
+                            <ComboBoxItem Content="Mode Sombre (Dark)"/>
+                            <ComboBoxItem Content="Mode Clair (Light)"/>
+                        </ComboBox>
 
-                    <TextBlock Text="Le mode système suit la configuration de Windows 10/11." FontSize="12" Foreground="Gray" TextWrapping="Wrap" Margin="0,10,0,0"/>
-                </StackPanel>
+                        <TextBlock Text="Le mode système suit la configuration de Windows 10/11." FontSize="12" Foreground="Gray" TextWrapping="Wrap" Margin="0,10,0,0"/>
+
+                        <TextBlock Text="Mises à jour" 
+                                   FontSize="18" 
+                                   FontWeight="Bold" 
+                                   Foreground="{DynamicResource MahApps.Brushes.Accent}"
+                                   Margin="0,20,0,10"/>
+                        <CheckBox x:Name="ChkAutoCheckUpdate" 
+                                  Content="Vérifier les màj au démarrage" 
+                                  IsChecked="True" 
+                                  Checked="ChkAutoCheckUpdate_Changed" 
+                                  Unchecked="ChkAutoCheckUpdate_Changed"/>
+
+                        <TextBlock Text="Réseau" 
+                                   FontSize="18" 
+                                   FontWeight="Bold" 
+                                   Foreground="{DynamicResource MahApps.Brushes.Accent}"
+                                   Margin="0,20,0,10"/>
+                        <TextBlock Text="Délai d'expiration du téléchargement :" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="ComboTimeout" SelectionChanged="ComboTimeout_SelectionChanged" SelectedIndex="1">
+                            <ComboBoxItem Content="30 secondes" Tag="30"/>
+                            <ComboBoxItem Content="60 secondes (par défaut)" Tag="60"/>
+                            <ComboBoxItem Content="120 secondes" Tag="120"/>
+                            <ComboBoxItem Content="300 secondes" Tag="300"/>
+                        </ComboBox>
+
+                        <TextBlock Text="Sauvegardes" 
+                                   FontSize="18" 
+                                   FontWeight="Bold" 
+                                   Foreground="{DynamicResource MahApps.Brushes.Accent}"
+                                   Margin="0,20,0,10"/>
+                        <TextBlock Text="Nombre de sauvegardes à conserver :" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="ComboBackupCount" SelectionChanged="ComboBackupCount_SelectionChanged" SelectedIndex="0">
+                            <ComboBoxItem Content="1 (par défaut)" Tag="1"/>
+                            <ComboBoxItem Content="3" Tag="3"/>
+                            <ComboBoxItem Content="5" Tag="5"/>
+                            <ComboBoxItem Content="Aucune (désactiver)" Tag="0"/>
+                        </ComboBox>
+
+                        <TextBlock Text="Dossier de sauvegarde personnalisé :" Margin="0,10,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtBackupPath" IsReadOnly="True" mah:TextBoxHelper.Watermark="Par défaut (à côté du patch)"/>
+                            <Button Grid.Column="1" Content="..." Width="30" Margin="5,0,0,0" Click="BtnBrowseBackupPath_Click"/>
+                            <Button Grid.Column="2" Content="✕" Width="30" Margin="5,0,0,0" ToolTip="Réinitialiser" Click="BtnClearBackupPath_Click"/>
+                        </Grid>
+
+                        <TextBlock Text="Diagnostic" 
+                                   FontSize="18" 
+                                   FontWeight="Bold" 
+                                   Foreground="{DynamicResource MahApps.Brushes.Accent}"
+                                   Margin="0,20,0,10"/>
+                        <Button Content="Ouvrir le dossier des journaux" 
+                                Click="BtnOpenLogFolder_Click" 
+                                HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </ScrollViewer>
             </mah:Flyout>
         </mah:FlyoutsControl>
     </mah:MetroWindow.Flyouts>

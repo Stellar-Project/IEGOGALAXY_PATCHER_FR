@@ -35,8 +35,9 @@ namespace IEGOGALAXY_PATCHER_FR.Managers
     {
         private const string VERSION_FILE_NAME = "iego_patch_version.txt";
         private const string BACKUP_FOLDER_NAME = "iego_backup";
-        private const int HTTP_TIMEOUT_SECONDS = 60;
         private const int MAX_DOWNLOAD_RETRIES = 2;
+
+        public int TimeoutSeconds { get; set; } = 60;
 
         public async Task InstallPatchAsync(
             string url,
@@ -139,20 +140,51 @@ namespace IEGOGALAXY_PATCHER_FR.Managers
             }
         }
 
-        public bool RestoreBackup(string destinationPath)
+        public List<string> GetAvailableBackups(string destinationPath, string? customBackupPath = null)
         {
-            string backupPath = Path.Combine(Path.GetDirectoryName(destinationPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "", BACKUP_FOLDER_NAME);
+            string baseDir = !string.IsNullOrWhiteSpace(customBackupPath) && Directory.Exists(customBackupPath)
+                ? customBackupPath
+                : (Path.GetDirectoryName(destinationPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
+
+            if (string.IsNullOrEmpty(baseDir) || !Directory.Exists(baseDir)) return new List<string>();
+
+            var backups = new List<string>();
+            try
+            {
+                var dirs = Directory.GetDirectories(baseDir, "iego_backup*");
+                backups.AddRange(dirs);
+            }
+            catch { }
+
+            backups.Sort((a, b) => string.Compare(b, a, StringComparison.OrdinalIgnoreCase));
+            return backups;
+        }
+
+        public bool RestoreBackup(string destinationPath, string? specificBackupPath = null, string? customBackupPath = null)
+        {
+            string backupPath = specificBackupPath ?? "";
+
+            if (string.IsNullOrEmpty(backupPath))
+            {
+                var backups = GetAvailableBackups(destinationPath, customBackupPath);
+                if (backups.Count == 0)
+                {
+                    LogManager.Log("Restauration impossible : aucune sauvegarde trouvée.");
+                    return false;
+                }
+                backupPath = backups[0];
+            }
 
             if (!Directory.Exists(backupPath))
             {
-                LogManager.Log("Restauration impossible : aucune sauvegarde trouvée.");
+                LogManager.Log($"Restauration impossible : le dossier {backupPath} n'existe pas.");
                 return false;
             }
 
             LogManager.Log($"Restauration de la sauvegarde depuis {backupPath}");
 
             if (Directory.Exists(destinationPath)) Directory.Delete(destinationPath, true);
-            Directory.Move(backupPath, destinationPath);
+            CopyDirectory(backupPath, destinationPath);
 
             LogManager.Log("Restauration terminée.");
             return true;
@@ -160,15 +192,62 @@ namespace IEGOGALAXY_PATCHER_FR.Managers
 
         private void BackupExistingInstall(string destinationPath)
         {
-            string? parentDir = Path.GetDirectoryName(destinationPath.TrimEnd(Path.DirectorySeparatorChar));
-            if (parentDir == null) return;
+            int retention = SettingsManager.Current.BackupRetentionCount;
+            string? customPath = SettingsManager.Current.CustomBackupPath;
+            BackupExistingInstall(destinationPath, retention, customPath);
+        }
 
-            string backupPath = Path.Combine(parentDir, BACKUP_FOLDER_NAME);
+        public void BackupExistingInstall(string destinationPath, int retentionCount, string? customBackupPath = null)
+        {
+            if (retentionCount <= 0)
+            {
+                LogManager.Log("Sauvegarde ignorée (désactivée dans les paramètres).");
+                return;
+            }
 
-            if (Directory.Exists(backupPath)) Directory.Delete(backupPath, true);
+            string baseDir;
+            if (!string.IsNullOrWhiteSpace(customBackupPath))
+            {
+                baseDir = customBackupPath;
+                if (!Directory.Exists(baseDir))
+                {
+                    try { Directory.CreateDirectory(baseDir); }
+                    catch (Exception ex)
+                    {
+                        LogManager.Log($"Impossible de créer le dossier de sauvegarde personnalisé : {ex.Message}");
+                        baseDir = Path.GetDirectoryName(destinationPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "";
+                    }
+                }
+            }
+            else
+            {
+                baseDir = Path.GetDirectoryName(destinationPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "";
+            }
 
-            LogManager.Log($"Sauvegarde de {destinationPath} vers {backupPath}");
-            CopyDirectory(destinationPath, backupPath);
+            if (string.IsNullOrEmpty(baseDir)) return;
+
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string newBackupPath = Path.Combine(baseDir, $"iego_backup_{timestamp}");
+
+            LogManager.Log($"Sauvegarde de {destinationPath} vers {newBackupPath}");
+            CopyDirectory(destinationPath, newBackupPath);
+
+            try
+            {
+                var backups = GetAvailableBackups(destinationPath, customBackupPath);
+                for (int i = retentionCount; i < backups.Count; i++)
+                {
+                    if (Directory.Exists(backups[i]))
+                    {
+                        Directory.Delete(backups[i], true);
+                        LogManager.Log($"Ancienne sauvegarde purgée : {backups[i]}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Log($"Erreur lors de la purge des anciennes sauvegardes : {ex.Message}");
+            }
         }
 
         private void WriteInstalledVersion(string destinationPath, string version)
@@ -271,7 +350,7 @@ namespace IEGOGALAXY_PATCHER_FR.Managers
                 client.Timeout = Timeout.InfiniteTimeSpan; // on gère le timeout nous-mêmes via CancellationToken
                 using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                 {
-                    linkedCts.CancelAfter(TimeSpan.FromSeconds(HTTP_TIMEOUT_SECONDS));
+                    linkedCts.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
 
                     using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, linkedCts.Token))
                     {
@@ -302,7 +381,7 @@ namespace IEGOGALAXY_PATCHER_FR.Managers
                             {
                                 // Réinitialise le compte à rebours du timeout à chaque donnée reçue :
                                 // on ne veut pas couper un téléchargement lent mais actif.
-                                linkedCts.CancelAfter(TimeSpan.FromSeconds(HTTP_TIMEOUT_SECONDS));
+                                linkedCts.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
 
                                 var read = await contentStream.ReadAsync(buffer, 0, buffer.Length, linkedCts.Token);
                                 if (read == 0)
