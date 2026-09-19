@@ -5,7 +5,7 @@
                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                  xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
                  mc:Ignorable="d"
-                 Title="IEGO GALAXY - PATCH FR" Height="550" Width="700"
+                 Title="IEGO GALAXY - PATCH FR" Height="640" Width="700"
                  GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
                  ResizeMode="CanMinimize"
                  WindowStartupLocation="CenterScreen">
@@ -51,7 +51,12 @@
     </mah:MetroWindow.Flyouts>
 
     <Grid Margin="30">
-        <StackPanel>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
             <TextBlock Text="INAZUMA ELEVEN GO GALAXY" 
                        FontSize="26" FontWeight="Black" HorizontalAlignment="Center" 
                        Foreground="{DynamicResource MahApps.Brushes.Accent}" Margin="0,0,0,5"/>
@@ -83,24 +88,81 @@
                 <Button Grid.Column="1" Content="..." Width="40" Margin="5,0,0,0" Click="BtnBrowse_Click"/>
             </Grid>
 
-            <Button x:Name="BtnPatch" 
-                Content="Télécharger et Installer le patch" 
-                Height="55" 
-                Style="{DynamicResource MahApps.Styles.Button.Square.Accent}"
-                FontSize="18" 
-                FontWeight="Bold" 
-                Click="BtnPatch_Click" 
-                Margin="0,0,0,20" 
-                Cursor="Hand"
-                mah:ControlsHelper.ContentCharacterCasing="Normal"/>
-
-            <StackPanel>
-                <Grid Margin="0,0,0,5">
-                    <TextBlock x:Name="LblStatus" Text="En attente" HorizontalAlignment="Left" FontWeight="SemiBold"/>
-                    <TextBlock x:Name="LblPercentage" Text="0%" HorizontalAlignment="Right" Foreground="{DynamicResource MahApps.Brushes.Accent}"/>
-                </Grid>
-                <mah:MetroProgressBar x:Name="ProgressBar" Height="15" Maximum="100"/>
-            </StackPanel>
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="BtnPatch" 
+                    Grid.Column="0"
+                    Content="Télécharger et Installer le patch" 
+                    Height="55" 
+                    Style="{DynamicResource MahApps.Styles.Button.Square.Accent}"
+                    FontSize="18" 
+                    FontWeight="Bold" 
+                    Click="BtnPatch_Click" 
+                    Cursor="Hand"
+                    mah:ControlsHelper.ContentCharacterCasing="Normal"/>
+                <Button x:Name="BtnCancel" 
+                    Grid.Column="1"
+                    Content="Annuler" 
+                    Height="55" 
+                    Width="100"
+                    Margin="10,0,0,0"
+                    FontSize="14"
+                    IsEnabled="False"
+                    Click="BtnCancel_Click" 
+                    Cursor="Hand"/>
+                <Button x:Name="BtnRestore" 
+                    Grid.Column="2"
+                    Content="Restaurer" 
+                    Height="55" 
+                    Width="100"
+                    Margin="10,0,0,0"
+                    FontSize="14"
+                    Click="BtnRestore_Click" 
+                    Cursor="Hand"/>
+            </Grid>
         </StackPanel>
+
+        <Grid Grid.Row="1" VerticalAlignment="Bottom">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0"
+                    Background="{DynamicResource MahApps.Brushes.Control.Background}" 
+                    BorderBrush="{DynamicResource MahApps.Brushes.Accent}" 
+                    BorderThickness="1" 
+                    Padding="12,10" 
+                    MinHeight="50"
+                    Margin="0,0,0,10">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="LblStatus" 
+                               Grid.Column="0"
+                               Text="En attente" 
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold" 
+                               FontSize="14"
+                               TextWrapping="Wrap"/>
+                    <TextBlock x:Name="LblPercentage" 
+                               Grid.Column="1"
+                               Text="" 
+                               VerticalAlignment="Center"
+                               FontWeight="Bold"
+                               FontSize="14"
+                               Margin="10,0,0,0"
+                               Foreground="{DynamicResource MahApps.Brushes.Accent}"/>
+                </Grid>
+            </Border>
+
+            <mah:MetroProgressBar Grid.Row="1" x:Name="ProgressBar" Height="18" Maximum="100"/>
+        </Grid>
     </Grid>
 </mah:MetroWindow>

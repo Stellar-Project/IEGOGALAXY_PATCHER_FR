@@ -32,7 +32,40 @@ jobs:
       
     - name: Publish Application
       run: |
-        dotnet publish IEGOGALAXY_PATCHER_FR/IEGOGALAXY_PATCHER_FR.csproj -c Release -r win-x64 --self-contained true -o ./publish /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:Version=${{ env.VERSION }}
+        dotnet publish IEGOGALAXY_PATCHER_FR/IEGOGALAXY_PATCHER_FR.csproj -c Release -r win-x64 --self-contained false -o ./publish /p:PublishSingleFile=true /p:Version=${{ env.VERSION }}
+
+    - name: Compute SHA256 checksum
+      id: checksum
+      shell: pwsh
+      run: |
+        $hash = (Get-FileHash ./publish/IEGOGALAXY_PATCHER_FR.exe -Algorithm SHA256).Hash
+        echo "SHA256=$hash" >> $env:GITHUB_ENV
+        echo "Checksum calculé : $hash"
+
+    - name: Generate update.xml
+      shell: pwsh
+      run: |
+        $xml = @"
+        <item>
+            <version>${{ env.VERSION }}</version>
+            <url>https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/IEGOGALAXY_PATCHER_FR.exe</url>
+            <changelog>https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}</changelog>
+            <mandatory>false</mandatory>
+            <checksum algorithm="SHA256">${{ env.SHA256 }}</checksum>
+        </item>
+        "@
+        Set-Content -Path ./update.xml -Value $xml -Encoding UTF8
+
+    - name: Commit update.xml to master
+      shell: pwsh
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git fetch origin master
+        git checkout master
+        git add update.xml
+        git commit -m "chore: update.xml pour ${{ github.ref_name }}" || echo "Rien à commit"
+        git push origin master
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
