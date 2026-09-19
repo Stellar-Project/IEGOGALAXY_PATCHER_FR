@@ -69,6 +69,42 @@ namespace IEGOGALAXY_PATCHER_FR.Managers
             }
         }
 
+        public static string? DetectGameVersion()
+        {
+            string bigbangId = "000400000010BB00";
+            string supernovaId = "000400000010BC00";
+
+            // 1. Citra/Azahar
+            if (Directory.Exists(GetCitraPath(supernovaId)) || Directory.Exists(GetAzaharPath(supernovaId))) return "supernova";
+            if (Directory.Exists(GetCitraPath(bigbangId)) || Directory.Exists(GetAzaharPath(bigbangId))) return "bigbang";
+
+            // 2. SD Cards
+            foreach (var card in DetectAll3DSSDCards())
+            {
+                // Check luma
+                string lumaTitles = Path.Combine(card, "luma", "titles");
+                if (Directory.Exists(lumaTitles))
+                {
+                    if (Directory.Exists(Path.Combine(lumaTitles, supernovaId))) return "supernova";
+                    if (Directory.Exists(Path.Combine(lumaTitles, bigbangId))) return "bigbang";
+                }
+
+                // Check Nintendo 3DS root for the actual game
+                string nintendo3ds = Path.Combine(card, "Nintendo 3DS");
+                if (Directory.Exists(nintendo3ds))
+                {
+                    try
+                    {
+                        if (Directory.GetDirectories(nintendo3ds, "0010BC00", SearchOption.AllDirectories).Length > 0) return "supernova";
+                        if (Directory.GetDirectories(nintendo3ds, "0010BB00", SearchOption.AllDirectories).Length > 0) return "bigbang";
+                    }
+                    catch { }
+                }
+            }
+
+            return null;
+        }
+
         private static string? FindSDRootFromPath(string path)
         {
             foreach (var card in DetectAll3DSSDCards())

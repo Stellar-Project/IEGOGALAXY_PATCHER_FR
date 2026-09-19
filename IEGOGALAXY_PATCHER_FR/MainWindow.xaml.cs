@@ -39,6 +39,16 @@ namespace IEGOGALAXY_PATCHER_FR
 
             LoadSettingsIntoUI();
 
+            string? detectedVersion = PathManager.DetectGameVersion();
+            if (detectedVersion == "supernova")
+            {
+                RbSupernova.IsChecked = true;
+            }
+            else
+            {
+                RbBigbang.IsChecked = true;
+            }
+
             DisplayVersion();
             UpdatePath_Event(null, null);
 
@@ -74,6 +84,20 @@ namespace IEGOGALAXY_PATCHER_FR
                 {
                     ComboBackupCount.SelectedItem = item;
                     break;
+                }
+            }
+
+            // Auto-detect game version
+            string? detectedVersion = PathManager.DetectGameVersion();
+            if (detectedVersion != null)
+            {
+                if (detectedVersion == "bigbang")
+                {
+                    RbBigbang.IsChecked = true;
+                }
+                else if (detectedVersion == "supernova")
+                {
+                    RbSupernova.IsChecked = true;
                 }
             }
         }
